@@ -2,11 +2,8 @@
       program main
 
       implicit none
-
-      real*8 :: x0(3,4),x1(3,4)
-      integer :: ifn(3,4) 
-      integer :: n,j
-      real*8 :: dV,r
+      real*8 :: x0(3,4),x1(3,4),dV
+      integer :: ifn(3,4),j,k
 
       ifn(:,1) = (/1, 4, 3/)
       ifn(:,2) = (/1, 3, 2/)
@@ -18,13 +15,13 @@
       x0(:,3) = (/0.0d0, 0.0d0, 0.0d0/)
       x0(:,4) = (/0.0d0, 0.0d0, 1.0d0/)
 
-      x1 = x0
-      do n=1,4
-         call perturb_node(x1(:,n))
+      x1(:,:) = x0(:,:)
+      do k=1,4
+         call perturb_node(x1(:,k))
       enddo
 
-      dV = tet_vol(x1(:,1),x1(:,2),x1(:,3),x1(:,4))
-      dV = dV - tet_vol(x0(:,1),x0(:,2),x0(:,3),x0(:,4))
+      dV = tet_vol(x1(:,1),x1(:,2),x1(:,3),x1(:,4)) &
+         - tet_vol(x0(:,1),x0(:,2),x0(:,3),x0(:,4))
 
       PRINT*,'volume change = ',dV
 
