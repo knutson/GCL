@@ -2,7 +2,7 @@
       program main
 
       implicit none
-      real*8 :: x0(3,4),x1(3,4),dV,vf(3),Sf(3)
+      real*8 :: x0(3,4),x1(3,4),dV,vf(3),Sf(3),S,n(3),dVf
       integer :: ifn(3,4),j,k
 
       ifn(:,1) = (/1, 4, 3/)
@@ -25,14 +25,12 @@
          - tet_vol(x0(:,1),x0(:,2),x0(:,3),x0(:,4))
       PRINT*,'Exact volume change = ',dV
 
-      ! Method 1: swept volume change
       dV = 0.0d0
       do j=1,4
          dV = dV + tri_dV(x0(:,ifn(:,j)),x1(:,ifn(:,j)))
       enddo
-      PRINT*,'Swept volume change = ',dV
+      PRINT*,'Swept volume = ',dV
 
-      ! Method 2: evaluate face area and normal at time n
       dV = 0.0d0
       do j=1,4
          vf(:) = ( x1(:,ifn(1,j)) + x1(:,ifn(2,j)) + x1(:,ifn(3,j)) )/3.0d0 &
@@ -40,7 +38,18 @@
          Sf(:) = tri_face( x0(:,ifn(1,j)), x0(:,ifn(2,j)), x0(:,ifn(3,j)) )
          dV = dV + dot_product(vf,Sf)
       enddo
-      PRINT*,'Wrong volume change = ',dV
+      PRINT*,'Incorrect RHS = ',dV
+
+      dV = 0.0d0
+      do j=1,4
+         Sf(:) = tri_face( x0(:,ifn(1,j)), x0(:,ifn(2,j)), x0(:,ifn(3,j)) )
+         S = norm2(Sf(:))                            ! face area
+         n(:) = Sf(:)/S                              ! face normal
+         dVf = tri_dV(x0(:,ifn(:,j)),x1(:,ifn(:,j))) ! volume swept by face
+         vf(:) = (dVf/S)*n(:)                        ! face velocity
+         dV = dV + dot_product(vf,n)*S
+      enddo
+      PRINT*,'Correct RHS = ',dV
  
       contains
 
