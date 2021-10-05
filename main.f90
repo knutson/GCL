@@ -5,7 +5,14 @@
       real*8 :: x0(3,4),x1(3,4),dV,vf(3),Sf(3),S,n(3),dVf
       integer :: ifn(3,4),j,k
 
-      real*8 :: Sf0(3),Sf1(3),n0(3),n1(3)
+      integer, allocatable :: seed(:)
+      integer :: seed_size,time(8)
+
+      call random_seed(size=seed_size)
+      allocate(seed(seed_size))
+      call date_and_time(values=time)
+      seed(:) = time(4)*(360000*time(5) + 6000*time(6) + 100*time(7) + time(8))
+      call random_seed(put=seed)
 
       ifn(:,1) = (/1, 4, 3/)
       ifn(:,2) = (/1, 3, 2/)
@@ -27,30 +34,11 @@
          - tet_vol(x0(:,1),x0(:,2),x0(:,3),x0(:,4))
       PRINT*,'Exact volume change = ',dV
 
-      dV = 0.0d0
-      do j=1,4
-         dV = dV + tri_dV(x0(:,ifn(:,j)),x1(:,ifn(:,j)))
-      enddo
-      PRINT*,'Swept volume = ',dV
-
-      dV = 0.0d0
-      do j=1,4
-
-         vf(:) = ( x1(:,ifn(1,j)) + x1(:,ifn(2,j)) + x1(:,ifn(3,j)) )/3.0d0 &
-               - ( x0(:,ifn(1,j)) + x0(:,ifn(2,j)) + x0(:,ifn(3,j)) )/3.0d0
-
-         Sf0(:) = tri_face( x0(:,ifn(1,j)), x0(:,ifn(2,j)), x0(:,ifn(3,j)) )
-         n0(:) = Sf0(:)/norm2(Sf0(:))
-
-         Sf1(:) = tri_face( x1(:,ifn(1,j)), x1(:,ifn(2,j)), x1(:,ifn(3,j)) )
-         n1(:) = Sf1(:)/norm2(Sf1(:))
-
-         Sf(:) = 0.5d0*(Sf0(:) + Sf1(:))
-         !n(:) = 0.5d0*(n0(:) + n1(:))
-
-         dV = dV + dot_product(vf,Sf)
-      enddo
-      PRINT*,'Incorrect RHS = ',dV
+      !dV = 0.0d0
+      !do j=1,4
+      !   dV = dV + tri_dV(x0(:,ifn(:,j)),x1(:,ifn(:,j)))
+      !enddo
+      !PRINT*,'Swept volume = ',dV
 
       dV = 0.0d0
       do j=1,4
@@ -62,6 +50,21 @@
          dV = dV + dot_product(vf,n)*S
       enddo
       PRINT*,'Correct RHS = ',dV
+
+      dV = 0.0d0
+      do j=1,4
+         ! face velocity is the change in cell centroid
+         vf(:) = ( x1(:,ifn(1,j)) + x1(:,ifn(2,j)) + x1(:,ifn(3,j)) )/3.0d0 &
+               - ( x0(:,ifn(1,j)) + x0(:,ifn(2,j)) + x0(:,ifn(3,j)) )/3.0d0
+
+         ! face normal and area are computed at time n
+         Sf(:) = tri_face( x0(:,ifn(1,j)), x0(:,ifn(2,j)), x0(:,ifn(3,j)) )
+         S = norm2(Sf(:))
+         n(:) = Sf(:)/S
+
+         dV = dV + dot_product(vf,n)*S
+      enddo
+      PRINT*,'US3D RHS = ',dV
 
       contains
 
