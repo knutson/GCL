@@ -5,6 +5,8 @@
       real*8 :: x0(3,4),x1(3,4),dV,vf(3),Sf(3),S,n(3),dVf
       integer :: ifn(3,4),j,k
 
+      real*8 :: Sf0(3),Sf1(3),n0(3),n1(3)
+
       ifn(:,1) = (/1, 4, 3/)
       ifn(:,2) = (/1, 3, 2/)
       ifn(:,3) = (/2, 3, 4/)
@@ -33,9 +35,19 @@
 
       dV = 0.0d0
       do j=1,4
+
          vf(:) = ( x1(:,ifn(1,j)) + x1(:,ifn(2,j)) + x1(:,ifn(3,j)) )/3.0d0 &
                - ( x0(:,ifn(1,j)) + x0(:,ifn(2,j)) + x0(:,ifn(3,j)) )/3.0d0
-         Sf(:) = tri_face( x0(:,ifn(1,j)), x0(:,ifn(2,j)), x0(:,ifn(3,j)) )
+
+         Sf0(:) = tri_face( x0(:,ifn(1,j)), x0(:,ifn(2,j)), x0(:,ifn(3,j)) )
+         n0(:) = Sf0(:)/norm2(Sf0(:))
+
+         Sf1(:) = tri_face( x1(:,ifn(1,j)), x1(:,ifn(2,j)), x1(:,ifn(3,j)) )
+         n1(:) = Sf1(:)/norm2(Sf1(:))
+
+         Sf(:) = 0.5d0*(Sf0(:) + Sf1(:))
+         !n(:) = 0.5d0*(n0(:) + n1(:))
+
          dV = dV + dot_product(vf,Sf)
       enddo
       PRINT*,'Incorrect RHS = ',dV
@@ -50,7 +62,7 @@
          dV = dV + dot_product(vf,n)*S
       enddo
       PRINT*,'Correct RHS = ',dV
- 
+
       contains
 
       subroutine perturb_node(x)
@@ -65,8 +77,8 @@
          r = r*0.5d0 ! between -0.25 and 0.25
          x(n) = x(n) + r
       enddo
-        
-      end subroutine 
+
+      end subroutine
 
       function tri_dV(x0,x1) result(dV)
       implicit none
@@ -104,12 +116,12 @@
       real(8), intent(IN) :: x1(3),x2(3),x3(3),x4(3)
       real(8) :: vol
       real(8), dimension(3) :: v41,v42,v43,c12
-      v41(:) = x1(:) - x4(:)    
-      v42(:) = x2(:) - x4(:)  
+      v41(:) = x1(:) - x4(:)
+      v42(:) = x2(:) - x4(:)
       v43(:) = x3(:) - x4(:)
-      c12 = cross_product(v42,v41) 
-      vol = dot_product(c12,v43)/6.0d0 
-      end function 
+      c12 = cross_product(v42,v41)
+      vol = dot_product(c12,v43)/6.0d0
+      end function
 
       function tri_face(x1,x2,x3) result(face)
       implicit none
